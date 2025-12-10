@@ -10,9 +10,20 @@ interface DepositModalProps {
   onClose: () => void;
 }
 
+const depositOptions = [
+  { value: 20, points: 1 },
+  { value: 40, points: 2 },
+  { value: 80, points: 4 },
+  { value: 100, points: 5 },
+  { value: 200, points: 10 },
+];
+
 export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const { addCredits, updateBalance } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedAmount, setSelectedAmount] = useState(20);
+
+  const selectedOption = depositOptions.find(opt => opt.value === selectedAmount) || depositOptions[0];
 
   const handleDeposit = async () => {
     setIsProcessing(true);
@@ -21,14 +32,14 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     // R$20 = 1 ponto/crédito
-    updateBalance(20);
-    addCredits(1);
+    updateBalance(selectedAmount);
+    addCredits(selectedOption.points);
     
     setIsProcessing(false);
     
     toast({
       title: "Depósito realizado!",
-      description: "R$ 20,00 depositado = 1 ponto adicionado",
+      description: `R$ ${selectedAmount},00 depositado = ${selectedOption.points} ponto${selectedOption.points > 1 ? 's' : ''} adicionado${selectedOption.points > 1 ? 's' : ''}`,
     });
     
     onClose();
@@ -51,11 +62,29 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
         </DialogHeader>
         
         <div className="space-y-4 mt-4">
-          {/* Valor fixo */}
+          {/* Opções de valor */}
+          <div className="grid grid-cols-3 gap-2">
+            {depositOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setSelectedAmount(option.value)}
+                className={`p-3 rounded-xl border-2 transition-all ${
+                  selectedAmount === option.value
+                    ? 'border-primary bg-primary/20 scale-105'
+                    : 'border-border bg-secondary/50 hover:border-primary/50'
+                }`}
+              >
+                <div className="text-lg font-bold text-foreground">R$ {option.value}</div>
+                <div className="text-xs text-muted-foreground">{option.points} ponto{option.points > 1 ? 's' : ''}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Valor selecionado */}
           <div className="card-3d rounded-xl p-4 text-center">
-            <p className="text-sm text-muted-foreground mb-2">Valor do depósito</p>
-            <div className="text-3xl font-bold text-primary">R$ 20,00</div>
-            <p className="text-xs text-muted-foreground mt-2">= 1 ponto para apostar</p>
+            <p className="text-sm text-muted-foreground mb-2">Valor selecionado</p>
+            <div className="text-3xl font-bold text-primary">R$ {selectedAmount},00</div>
+            <p className="text-xs text-muted-foreground mt-2">= {selectedOption.points} ponto{selectedOption.points > 1 ? 's' : ''} para apostar</p>
           </div>
 
           {/* Info */}
@@ -81,7 +110,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
             disabled={isProcessing}
             className="w-full btn-primary-glow text-primary-foreground font-bold py-3"
           >
-            {isProcessing ? 'Processando...' : 'Depositar via PIX'}
+            {isProcessing ? 'Processando...' : `Depositar R$ ${selectedAmount},00 via PIX`}
           </Button>
         </div>
       </DialogContent>
