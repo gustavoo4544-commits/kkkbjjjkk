@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Trophy, Plus, Menu, X, User, LogOut, History, Wallet } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginModal } from './LoginModal';
+import { DepositModal } from './DepositModal';
 import { Button } from '@/components/ui/button';
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   return (
@@ -26,7 +28,7 @@ export function Header() {
             {isAuthenticated ? (
               <>
                 <Button
-                  onClick={() => setShowLoginModal(true)}
+                  onClick={() => setShowDepositModal(true)}
                   className="btn-primary-glow text-primary-foreground font-semibold text-sm px-3 py-1.5 h-8"
                 >
                   <Plus className="w-4 h-4 mr-1" />
@@ -88,6 +90,7 @@ export function Header() {
       </header>
 
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
+      <DepositModal isOpen={showDepositModal} onClose={() => setShowDepositModal(false)} />
     </>
   );
 }

@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (name: string, phone: string) => void;
   logout: () => void;
   updateBalance: (amount: number) => void;
+  addCredits: (amount: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,10 +21,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name,
       phone,
       balance: 0,
-      credits: 100,
+      credits: 0,
       createdAt: new Date(),
     };
     setUser(newUser);
+  }, []);
+
+  const addCredits = useCallback((amount: number) => {
+    setUser(prev => prev ? { ...prev, credits: prev.credits + amount } : null);
   }, []);
 
   const logout = useCallback(() => {
@@ -41,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       updateBalance,
+      addCredits,
     }}>
       {children}
     </AuthContext.Provider>
