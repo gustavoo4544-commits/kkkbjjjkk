@@ -19,7 +19,8 @@ interface AuthContextType {
   totalPrize: number;
   totalBettors: number;
   betsByTeam: BetsByTeam[];
-  login: (name: string, phone: string) => Promise<boolean>;
+  login: (phone: string, password: string) => Promise<boolean>;
+  register: (name: string, phone: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateBalance: (amount: number) => void;
   addCredits: (amount: number) => Promise<void>;
@@ -198,10 +199,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [loadUserProfile, loadTransactions, refreshPrizeStats]);
 
-  // Login: find existing user by phone or create new
-  const login = useCallback(async (name: string, phone: string): Promise<boolean> => {
+  // Simple hash function for password (for demo purposes)
+  const hashPassword = (password: string): string => {
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+      const char = password.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash.toString(16);
+  };
+
+  // Login with phone and password
+  const login = useCallback(async (phone: string, password: string): Promise<boolean> => {
     try {
-      // Check if user exists with this phone
       const { data: existingProfile, error: findError } = await supabase
         .from('profiles')
         .select('*')
@@ -214,51 +225,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      let profile;
-
-      if (existingProfile) {
-        // User exists - log them in
-        profile = existingProfile;
-        toast.success(`Bem-vindo de volta, ${existingProfile.name}!`);
-      } else {
-        // Create new user
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert({
-            name,
-            phone,
-            credits: 0,
-            balance: 0,
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating profile:', createError);
-          toast.error('Erro ao criar conta');
-          return false;
-        }
-
-        profile = newProfile;
-        toast.success('Conta criada com sucesso!');
+      if (!existingProfile) {
+        toast.error('Conta não encontrada. Crie uma conta primeiro.');
+        return false;
       }
 
-      // Set user state
+      // Verify password
+      const passwordHash = hashPassword(password);
+      if (existingProfile.password_hash !== passwordHash) {
+        toast.error('Senha incorreta');
+        return false;
+      }
+
       const loggedInUser: User = {
-        id: profile.id,
-        name: profile.name,
-        phone: profile.phone,
-        balance: Number(profile.balance),
-        credits: profile.credits,
-        createdAt: new Date(profile.created_at),
+        id: existingProfile.id,
+        name: existingProfile.name,
+        phone: existingProfile.phone,
+        balance: Number(existingProfile.balance),
+        credits: existingProfile.credits,
+        createdAt: new Date(existingProfile.created_at),
       };
       
       setUser(loggedInUser);
-      localStorage.setItem(STORAGE_KEY, profile.id);
+      localStorage.setItem(STORAGE_KEY, existingProfile.id);
+      await loadTransactions(existingProfile.id);
       
-      // Load transactions
-      await loadTransactions(profile.id);
-      
+      toast.success(`Bem-vindo de volta, ${existingProfile.name}!`);
       return true;
     } catch (err) {
       console.error('Error in login:', err);
@@ -266,6 +258,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
   }, [loadTransactions]);
+
+  // Register new user
+  const register = useCallback(async (name: string, phone: string, password: string): Promise<boolean> => {
+    try {
+      // Check if phone already exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('phone', phone)
+        .maybeSingle();
+
+      if (existingProfile) {
+        toast.error('Este telefone já está cadastrado. Faça login.');
+        return false;
+      }
+
+      const passwordHash = hashPassword(password);
+
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert({
+          name,
+          phone,
+          password_hash: passwordHash,
+          credits: 0,
+          balance: 0,
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating profile:', createError);
+        toast.error('Erro ao criar conta');
+        return false;
+      }
+
+      const loggedInUser: User = {
+        id: newProfile.id,
+        name: newProfile.name,
+        phone: newProfile.phone,
+        balance: Number(newProfile.balance),
+        credits: newProfile.credits,
+        createdAt: new Date(newProfile.created_at),
+      };
+      
+      setUser(loggedInUser);
+      localStorage.setItem(STORAGE_KEY, newProfile.id);
+      
+      toast.success('Conta criada com sucesso!');
+      return true;
+    } catch (err) {
+      console.error('Error in register:', err);
+      toast.error('Erro ao criar conta');
+      return false;
+    }
+  }, []);
 
   const logout = useCallback(() => {
     setUser(null);
@@ -416,6 +464,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       totalBettors,
       betsByTeam,
       login,
+      register,
       logout,
       updateBalance,
       addCredits,
