@@ -10,29 +10,29 @@ export function BalanceCard({ onDepositClick }: BalanceCardProps) {
   const { user, isAuthenticated } = useAuth();
 
   return (
-    <div className="card-3d rounded-2xl p-5 mb-6">
+    <div className="card-cartoon p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Wallet className="w-5 h-5 text-primary" />
-          <span className="text-sm text-muted-foreground">Saldo disponível</span>
+          <span className="text-sm text-muted-foreground font-semibold">Saldo disponível</span>
         </div>
         {isAuthenticated && (
           <Button
             onClick={onDepositClick}
             size="sm"
-            className="btn-accent-glow text-accent-foreground font-semibold text-xs px-3 h-7"
+            className="btn-cartoon bg-accent text-accent-foreground font-bold text-xs px-3 h-7"
           >
             <ArrowUpRight className="w-3 h-3 mr-1" />
             Sacar
           </Button>
         )}
       </div>
-      <div className="text-3xl font-bold text-foreground">
+      <div className="text-3xl font-black text-foreground tracking-tight">
         R$ {isAuthenticated ? user?.balance.toFixed(2).replace('.', ',') : '0,00'}
       </div>
       {isAuthenticated && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+          <span className="px-3 py-1 bg-primary/20 text-primary rounded-full font-bold border-2 border-primary/30">
             {user?.credits} créditos
           </span>
         </div>
