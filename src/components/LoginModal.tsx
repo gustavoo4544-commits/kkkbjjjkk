@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Phone, X } from 'lucide-react';
+import { User, Phone, X, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface LoginModalProps {
@@ -12,9 +12,9 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const [isRegistering, setIsRegistering] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
 
   const formatPhone = (value: string) => {
@@ -29,13 +29,21 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setPhone(formatted);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim() && phone.trim()) {
-      login(name.trim(), phone.trim());
-      onClose();
-      setName('');
-      setPhone('');
+    
+    if (!name.trim() || !phone.trim()) return;
+    
+    setIsSubmitting(true);
+    try {
+      const success = await login(name.trim(), phone.trim());
+      if (success) {
+        onClose();
+        setName('');
+        setPhone('');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -50,9 +58,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </button>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center text-foreground">
-            {isRegistering ? 'Criar Conta' : 'Entrar'}
+            Entrar ou Criar Conta
           </DialogTitle>
         </DialogHeader>
+        
+        <p className="text-sm text-muted-foreground text-center">
+          Digite seu nome e telefone. Se já tiver conta, entraremos automaticamente.
+        </p>
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
@@ -69,6 +81,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 onChange={(e) => setName(e.target.value)}
                 className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
                 required
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -88,6 +101,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
                 required
                 maxLength={15}
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -95,20 +109,18 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           <Button
             type="submit"
             className="w-full btn-primary-glow text-primary-foreground font-bold py-3"
+            disabled={isSubmitting}
           >
-            {isRegistering ? 'Criar Conta' : 'Entrar'}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Entrando...
+              </>
+            ) : (
+              'Entrar'
+            )}
           </Button>
         </form>
-
-        <div className="text-center mt-4">
-          <button
-            type="button"
-            onClick={() => setIsRegistering(!isRegistering)}
-            className="text-primary hover:text-primary-glow text-sm font-medium transition-colors"
-          >
-            {isRegistering ? 'Já tem conta? Entre aqui' : 'Não tem conta? Cadastre-se'}
-          </button>
-        </div>
       </DialogContent>
     </Dialog>
   );
