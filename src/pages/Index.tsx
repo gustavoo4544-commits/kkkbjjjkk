@@ -7,7 +7,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { BetModal } from '@/components/BetModal';
 import { LoginModal } from '@/components/LoginModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { teams } from '@/data/teams';
+import { teams, teamsByGroup, TeamWithGroup } from '@/data/teams';
 import { Team } from '@/types/user';
 import { Trophy, History, User, Wallet, Calendar, Phone } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export default function Index() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { user, isAuthenticated } = useAuth();
 
-  const handleTeamClick = (team: Team) => {
+  const handleTeamClick = (team: Team | TeamWithGroup) => {
     if (!isAuthenticated) {
       setShowLoginModal(true);
       return;
@@ -33,18 +33,26 @@ export default function Index() {
     }
   };
 
+  const handleBetNowClick = () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+    setActiveTab('bets');
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
         return (
           <>
             <BalanceCard onDepositClick={handleDepositClick} />
-            <PromoBanner />
+            <PromoBanner onBetClick={handleBetNowClick} />
             
             <section>
               <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-primary" />
-                Times para apostar
+                Times em destaque
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 {teams.map((team) => (
@@ -64,13 +72,30 @@ export default function Index() {
           <section>
             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <Trophy className="w-5 h-5 text-primary" />
-              Minhas Apostas
+              Todos os Times da Copa
             </h2>
-            <div className="card-3d rounded-xl p-8 text-center">
-              <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Você ainda não fez nenhuma aposta.</p>
-              <p className="text-sm text-muted-foreground mt-2">Escolha um time e comece a apostar!</p>
-            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              Escolha o time que você acredita que será campeão!
+            </p>
+            
+            {Object.entries(teamsByGroup).map(([group, groupTeams]) => (
+              <div key={group} className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">
+                    Grupo {group}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {groupTeams.map((team) => (
+                    <TeamCard
+                      key={team.id}
+                      team={team}
+                      onClick={() => handleTeamClick(team)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
           </section>
         );
       
