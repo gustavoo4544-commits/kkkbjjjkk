@@ -1,4 +1,4 @@
-import { Wallet, ArrowUpRight, Coins } from 'lucide-react';
+import { Wallet, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -7,7 +7,7 @@ interface BalanceCardProps {
 }
 
 export function BalanceCard({ onDepositClick }: BalanceCardProps) {
-  const { profile, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <div className="card-3d rounded-2xl p-5 mb-6">
@@ -28,13 +28,12 @@ export function BalanceCard({ onDepositClick }: BalanceCardProps) {
         )}
       </div>
       <div className="text-3xl font-bold text-foreground">
-        R$ {isAuthenticated ? Number(profile?.balance || 0).toFixed(2).replace('.', ',') : '0,00'}
+        R$ {isAuthenticated ? user?.balance.toFixed(2).replace('.', ',') : '0,00'}
       </div>
       {isAuthenticated && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full flex items-center gap-1">
-            <Coins className="w-3 h-3" />
-            {profile?.credits || 0} créditos
+          <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+            {user?.credits} créditos
           </span>
         </div>
       )}

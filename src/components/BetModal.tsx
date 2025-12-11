@@ -5,69 +5,36 @@ import { Team } from '@/types/user';
 import { Users, Trophy, Coins, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface BetModalProps {
   team: Team | null;
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
 }
 
-export function BetModal({ team, isOpen, onClose, onSuccess }: BetModalProps) {
-  const [loading, setLoading] = useState(false);
-  const { user, profile, addCredits } = useAuth();
+export function BetModal({ team, isOpen, onClose }: BetModalProps) {
+  const [amount, setAmount] = useState(20);
+  const { user, updateBalance } = useAuth();
+  const amounts = [10, 20, 50, 100];
 
-  const handleBet = async () => {
-    if (!user || !profile || !team) return;
+  const handleBet = () => {
+    if (!user) return;
     
-    if (profile.credits < 1) {
+    if (user.balance < amount) {
       toast({
-        title: "Créditos insuficientes",
+        title: "Saldo insuficiente",
         description: "Faça um depósito para continuar apostando.",
         variant: "destructive",
       });
       return;
     }
 
-    setLoading(true);
-
-    try {
-      // Save bet to database
-      const { error } = await supabase
-        .from('bets')
-        .insert({
-          user_id: user.id,
-          team_id: team.id,
-          team_name: team.name,
-          team_flag: team.flag,
-          amount: 1,
-          status: 'pending'
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      // Deduct 1 credit
-      await addCredits(-1);
-
-      toast({
-        title: "Aposta realizada!",
-        description: `Você apostou 1 ponto no ${team.name}.`,
-      });
-      
-      onSuccess?.();
-      onClose();
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível realizar a aposta",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    updateBalance(-amount);
+    toast({
+      title: "Aposta realizada!",
+      description: `Você apostou R$ ${amount},00 no ${team?.name}.`,
+    });
+    onClose();
   };
 
   if (!team) return null;
@@ -114,22 +81,34 @@ export function BetModal({ team, isOpen, onClose, onSuccess }: BetModalProps) {
             </div>
           </div>
 
-          {/* Credits info */}
-          <div className="card-3d rounded-xl p-4 text-center">
-            <p className="text-sm text-muted-foreground mb-2">Custo da aposta</p>
-            <div className="text-3xl font-bold text-primary">1 ponto</div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Você tem {profile?.credits || 0} ponto{(profile?.credits || 0) !== 1 ? 's' : ''}
-            </p>
+          {/* Amount Selection */}
+          <div>
+            <label className="text-sm text-muted-foreground mb-2 block">
+              Valor da aposta
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {amounts.map((value) => (
+                <button
+                  key={value}
+                  onClick={() => setAmount(value)}
+                  className={`py-2 rounded-lg font-semibold text-sm transition-all ${
+                    amount === value
+                      ? 'bg-primary text-primary-foreground glow-green'
+                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                  }`}
+                >
+                  R$ {value}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Confirm Button */}
           <Button
             onClick={handleBet}
-            disabled={loading || (profile?.credits || 0) < 1}
             className="w-full btn-primary-glow text-primary-foreground font-bold py-3 text-base"
           >
-            {loading ? 'Processando...' : 'Apostar 1 ponto'}
+            Apostar R$ {amount},00
           </Button>
         </div>
       </DialogContent>
