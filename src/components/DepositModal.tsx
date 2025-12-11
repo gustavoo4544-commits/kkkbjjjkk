@@ -19,7 +19,7 @@ const depositOptions = [
 ];
 
 export function DepositModal({ isOpen, onClose }: DepositModalProps) {
-  const { addCredits, updateBalance } = useAuth();
+  const { addCredits, updateBalance, addDeposit } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState(20);
 
@@ -34,6 +34,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
     // R$20 = 1 ponto/crédito
     updateBalance(selectedAmount);
     addCredits(selectedOption.points);
+    addDeposit(selectedAmount, selectedOption.points);
     
     setIsProcessing(false);
     

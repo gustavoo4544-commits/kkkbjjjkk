@@ -6,6 +6,8 @@ import { PromoBanner } from '@/components/PromoBanner';
 import { BottomNav } from '@/components/BottomNav';
 import { BetModal } from '@/components/BetModal';
 import { LoginModal } from '@/components/LoginModal';
+import { HistoryList } from '@/components/HistoryList';
+import { TransactionReceipt, Transaction } from '@/components/TransactionReceipt';
 import { useAuth } from '@/contexts/AuthContext';
 import { teams, teamsByGroup, TeamWithGroup } from '@/data/teams';
 import { Team } from '@/types/user';
@@ -16,7 +18,9 @@ export default function Index() {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [showBetModal, setShowBetModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const { user, isAuthenticated, transactions } = useAuth();
 
   const handleTeamClick = (team: Team | TeamWithGroup) => {
     if (!isAuthenticated) {
@@ -106,11 +110,13 @@ export default function Index() {
               <History className="w-5 h-5 text-primary" />
               Histórico
             </h2>
-            <div className="card-3d rounded-xl p-8 text-center">
-              <History className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Nenhuma transação encontrada.</p>
-              <p className="text-sm text-muted-foreground mt-2">Suas transações aparecerão aqui.</p>
-            </div>
+            <HistoryList 
+              transactions={transactions} 
+              onTransactionClick={(transaction) => {
+                setSelectedTransaction(transaction);
+                setShowReceiptModal(true);
+              }}
+            />
           </section>
         );
       
@@ -201,6 +207,12 @@ export default function Index() {
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
+      />
+
+      <TransactionReceipt
+        transaction={selectedTransaction}
+        isOpen={showReceiptModal}
+        onClose={() => setShowReceiptModal(false)}
       />
     </div>
   );
