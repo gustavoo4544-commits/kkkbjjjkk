@@ -6,10 +6,15 @@ import { DepositModal } from './DepositModal';
 import { Button } from '@/components/ui/button';
 
 export function Header() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { profile, isAuthenticated, signOut, refreshProfile } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+    setShowMenu(false);
+  };
 
   return (
     <>
@@ -60,8 +65,8 @@ export function Header() {
         {showMenu && isAuthenticated && (
           <div className="absolute top-14 right-4 bg-card border border-border rounded-xl shadow-lg p-2 min-w-48 animate-scale-in">
             <div className="px-3 py-2 border-b border-border mb-2">
-              <p className="font-semibold text-foreground text-sm">Olá, {user?.name}</p>
-              <p className="text-xs text-muted-foreground">{user?.phone}</p>
+              <p className="font-semibold text-foreground text-sm">Olá, {profile?.name}</p>
+              <p className="text-xs text-muted-foreground">{profile?.phone}</p>
             </div>
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-left">
               <User className="w-4 h-4 text-muted-foreground" />
@@ -76,10 +81,7 @@ export function Header() {
               <span className="text-sm text-foreground">Histórico</span>
             </button>
             <button
-              onClick={() => {
-                logout();
-                setShowMenu(false);
-              }}
+              onClick={handleLogout}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-destructive/10 transition-colors text-left mt-2 border-t border-border pt-3"
             >
               <LogOut className="w-4 h-4 text-destructive" />
@@ -90,7 +92,7 @@ export function Header() {
       </header>
 
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
-      <DepositModal isOpen={showDepositModal} onClose={() => setShowDepositModal(false)} />
+      <DepositModal isOpen={showDepositModal} onClose={() => setShowDepositModal(false)} onSuccess={refreshProfile} />
     </>
   );
 }

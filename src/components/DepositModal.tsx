@@ -4,10 +4,12 @@ import { X, Wallet, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DepositModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 const depositOptions = [
@@ -18,31 +20,56 @@ const depositOptions = [
   { value: 200, points: 10 },
 ];
 
-export function DepositModal({ isOpen, onClose }: DepositModalProps) {
-  const { addCredits, updateBalance } = useAuth();
+export function DepositModal({ isOpen, onClose, onSuccess }: DepositModalProps) {
+  const { user, addCredits, updateBalance } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState(20);
 
   const selectedOption = depositOptions.find(opt => opt.value === selectedAmount) || depositOptions[0];
 
   const handleDeposit = async () => {
+    if (!user) return;
+    
     setIsProcessing(true);
     
-    // Simula processamento do PIX
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // R$20 = 1 ponto/crédito
-    updateBalance(selectedAmount);
-    addCredits(selectedOption.points);
-    
-    setIsProcessing(false);
-    
-    toast({
-      title: "Depósito realizado!",
-      description: `R$ ${selectedAmount},00 depositado = ${selectedOption.points} ponto${selectedOption.points > 1 ? 's' : ''} adicionado${selectedOption.points > 1 ? 's' : ''}`,
-    });
-    
-    onClose();
+    try {
+      // Simula processamento do PIX
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Save deposit to database
+      const { error } = await supabase
+        .from('deposits')
+        .insert({
+          user_id: user.id,
+          amount: selectedAmount,
+          points: selectedOption.points,
+          status: 'completed'
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local state
+      await updateBalance(selectedAmount);
+      await addCredits(selectedOption.points);
+      
+      toast({
+        title: "Depósito realizado!",
+        description: `R$ ${selectedAmount},00 depositado = ${selectedOption.points} ponto${selectedOption.points > 1 ? 's' : ''} adicionado${selectedOption.points > 1 ? 's' : ''}`,
+      });
+      
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível processar o depósito",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
