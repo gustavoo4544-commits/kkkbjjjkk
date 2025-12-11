@@ -13,26 +13,26 @@ interface BetModalProps {
 }
 
 export function BetModal({ team, isOpen, onClose }: BetModalProps) {
-  const [amount, setAmount] = useState(20);
-  const { user, updateBalance } = useAuth();
-  const amounts = [10, 20, 50, 100];
+  const [amount, setAmount] = useState(1);
+  const { user, addBet } = useAuth();
+  const amounts = [1, 2, 3, 5];
 
   const handleBet = () => {
-    if (!user) return;
+    if (!user || !team) return;
     
-    if (user.balance < amount) {
+    if (user.credits < amount) {
       toast({
-        title: "Saldo insuficiente",
-        description: "Faça um depósito para continuar apostando.",
+        title: "Créditos insuficientes",
+        description: "Faça um depósito para ganhar mais pontos.",
         variant: "destructive",
       });
       return;
     }
 
-    updateBalance(-amount);
+    addBet(team.id, team.name, team.flag, amount);
     toast({
       title: "Aposta realizada!",
-      description: `Você apostou R$ ${amount},00 no ${team?.name}.`,
+      description: `Você apostou ${amount} ponto${amount > 1 ? 's' : ''} no ${team.name}.`,
     });
     onClose();
   };
@@ -84,7 +84,7 @@ export function BetModal({ team, isOpen, onClose }: BetModalProps) {
           {/* Amount Selection */}
           <div>
             <label className="text-sm text-muted-foreground mb-2 block">
-              Valor da aposta
+              Pontos para apostar (você tem {user?.credits || 0})
             </label>
             <div className="grid grid-cols-4 gap-2">
               {amounts.map((value) => (
@@ -97,7 +97,7 @@ export function BetModal({ team, isOpen, onClose }: BetModalProps) {
                       : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                   }`}
                 >
-                  R$ {value}
+                  {value} pt{value > 1 ? 's' : ''}
                 </button>
               ))}
             </div>
@@ -106,9 +106,10 @@ export function BetModal({ team, isOpen, onClose }: BetModalProps) {
           {/* Confirm Button */}
           <Button
             onClick={handleBet}
+            disabled={!user || user.credits < amount}
             className="w-full btn-primary-glow text-primary-foreground font-bold py-3 text-base"
           >
-            Apostar R$ {amount},00
+            Apostar {amount} ponto{amount > 1 ? 's' : ''}
           </Button>
         </div>
       </DialogContent>
