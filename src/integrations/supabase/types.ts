@@ -112,7 +112,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_prize_statistics: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
