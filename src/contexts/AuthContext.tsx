@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { User } from '@/types/user';
 import { Transaction, DepositTransaction, BetTransaction } from '@/components/TransactionReceipt';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BetsByTeam {
   teamName: string;
@@ -22,6 +23,7 @@ interface AuthContextType {
   addCredits: (amount: number) => void;
   addDeposit: (amount: number, points: number) => void;
   addBet: (teamId: string, teamName: string, teamFlag: string, amount: number) => void;
+  refreshPrizeStats: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,7 +31,63 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [allBets, setAllBets] = useState<BetTransaction[]>([]);
+  const [totalPrize, setTotalPrize] = useState(0);
+  const [totalBettors, setTotalBettors] = useState(0);
+  const [betsByTeam, setBetsByTeam] = useState<BetsByTeam[]>([]);
+
+  // Fetch prize statistics from database
+  const refreshPrizeStats = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_prize_statistics');
+      
+      if (error) {
+        console.error('Error fetching prize stats:', error);
+        return;
+      }
+      
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        const stats = data as { total_prize?: number; total_bettors?: number; bets_by_team?: any[] };
+        setTotalPrize(stats.total_prize || 0);
+        setTotalBettors(stats.total_bettors || 0);
+        setBetsByTeam(
+          (stats.bets_by_team || []).map((team: any) => ({
+            teamName: team.teamName,
+            teamFlag: team.teamFlag,
+            bettors: Number(team.bettors),
+            amount: Number(team.total_amount),
+          }))
+        );
+      }
+    } catch (err) {
+      console.error('Error in refreshPrizeStats:', err);
+    }
+  }, []);
+
+  // Load prize stats on mount and set up realtime subscription
+  useEffect(() => {
+    refreshPrizeStats();
+
+    // Subscribe to realtime changes on bets table
+    const channel = supabase
+      .channel('bets-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bets'
+        },
+        () => {
+          // Refresh stats when any bet changes
+          refreshPrizeStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refreshPrizeStats]);
 
   const login = useCallback((name: string, phone: string) => {
     const newUser: User = {
@@ -80,39 +138,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status: 'pending',
     };
     setTransactions(prev => [bet, ...prev]);
-    setAllBets(prev => [...prev, bet]);
     setUser(prev => prev ? { ...prev, credits: prev.credits - amount } : null);
-  }, []);
-
-  // Calculate prize pool stats
-  const { totalPrize, totalBettors, betsByTeam } = useMemo(() => {
-    const total = allBets.reduce((sum, bet) => sum + bet.amount, 0);
-    const uniqueBettors = new Set(allBets.map(bet => bet.id)).size;
     
-    const teamMap = new Map<string, BetsByTeam>();
-    allBets.forEach(bet => {
-      const existing = teamMap.get(bet.teamId);
-      if (existing) {
-        existing.bettors += 1;
-        existing.amount += bet.amount;
-      } else {
-        teamMap.set(bet.teamId, {
-          teamName: bet.teamName,
-          teamFlag: bet.teamFlag,
-          bettors: 1,
-          amount: bet.amount,
-        });
-      }
-    });
-    
-    const sortedTeams = Array.from(teamMap.values()).sort((a, b) => b.amount - a.amount);
-    
-    return {
-      totalPrize: total,
-      totalBettors: uniqueBettors,
-      betsByTeam: sortedTeams,
-    };
-  }, [allBets]);
+    // Refresh stats after adding bet (the realtime will also trigger this)
+    refreshPrizeStats();
+  }, [refreshPrizeStats]);
 
   return (
     <AuthContext.Provider value={{
@@ -128,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       addCredits,
       addDeposit,
       addBet,
+      refreshPrizeStats,
     }}>
       {children}
     </AuthContext.Provider>
