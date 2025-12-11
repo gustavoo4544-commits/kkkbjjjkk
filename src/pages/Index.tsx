@@ -8,6 +8,7 @@ import { BetModal } from '@/components/BetModal';
 import { LoginModal } from '@/components/LoginModal';
 import { HistoryList } from '@/components/HistoryList';
 import { TransactionReceipt, Transaction } from '@/components/TransactionReceipt';
+import { PrizeModal } from '@/components/PrizeModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { teams, teamsByGroup, TeamWithGroup } from '@/data/teams';
 import { Team } from '@/types/user';
@@ -18,9 +19,10 @@ export default function Index() {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [showBetModal, setShowBetModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showPrizeModal, setShowPrizeModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const { user, isAuthenticated, transactions } = useAuth();
+  const { user, isAuthenticated, transactions, totalPrize, totalBettors, betsByTeam } = useAuth();
 
   const handleTeamClick = (team: Team | TeamWithGroup) => {
     if (!isAuthenticated) {
@@ -196,6 +198,8 @@ export default function Index() {
         onTabChange={setActiveTab}
         onLoginRequired={() => setShowLoginModal(true)}
         isAuthenticated={isAuthenticated}
+        totalPrize={totalPrize}
+        onPrizeClick={() => setShowPrizeModal(true)}
       />
 
       <BetModal
@@ -207,6 +211,14 @@ export default function Index() {
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
+      />
+
+      <PrizeModal
+        isOpen={showPrizeModal}
+        onClose={() => setShowPrizeModal(false)}
+        totalPrize={totalPrize}
+        totalBettors={totalBettors}
+        betsByTeam={betsByTeam}
       />
 
       <TransactionReceipt

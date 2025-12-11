@@ -1,11 +1,21 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import { User } from '@/types/user';
 import { Transaction, DepositTransaction, BetTransaction } from '@/components/TransactionReceipt';
+
+interface BetsByTeam {
+  teamName: string;
+  teamFlag: string;
+  bettors: number;
+  amount: number;
+}
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   transactions: Transaction[];
+  totalPrize: number;
+  totalBettors: number;
+  betsByTeam: BetsByTeam[];
   login: (name: string, phone: string) => void;
   logout: () => void;
   updateBalance: (amount: number) => void;
@@ -19,6 +29,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allBets, setAllBets] = useState<BetTransaction[]>([]);
 
   const login = useCallback((name: string, phone: string) => {
     const newUser: User = {
@@ -69,14 +80,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status: 'pending',
     };
     setTransactions(prev => [bet, ...prev]);
+    setAllBets(prev => [...prev, bet]);
     setUser(prev => prev ? { ...prev, credits: prev.credits - amount } : null);
   }, []);
+
+  // Calculate prize pool stats
+  const { totalPrize, totalBettors, betsByTeam } = useMemo(() => {
+    const total = allBets.reduce((sum, bet) => sum + bet.amount, 0);
+    const uniqueBettors = new Set(allBets.map(bet => bet.id)).size;
+    
+    const teamMap = new Map<string, BetsByTeam>();
+    allBets.forEach(bet => {
+      const existing = teamMap.get(bet.teamId);
+      if (existing) {
+        existing.bettors += 1;
+        existing.amount += bet.amount;
+      } else {
+        teamMap.set(bet.teamId, {
+          teamName: bet.teamName,
+          teamFlag: bet.teamFlag,
+          bettors: 1,
+          amount: bet.amount,
+        });
+      }
+    });
+    
+    const sortedTeams = Array.from(teamMap.values()).sort((a, b) => b.amount - a.amount);
+    
+    return {
+      totalPrize: total,
+      totalBettors: uniqueBettors,
+      betsByTeam: sortedTeams,
+    };
+  }, [allBets]);
 
   return (
     <AuthContext.Provider value={{
       user,
       isAuthenticated: !!user,
       transactions,
+      totalPrize,
+      totalBettors,
+      betsByTeam,
       login,
       logout,
       updateBalance,
