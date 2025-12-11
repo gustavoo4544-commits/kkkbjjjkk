@@ -1,6 +1,11 @@
 import { Trophy, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export function PromoBanner() {
+interface PromoBannerProps {
+  onBetClick?: () => void;
+}
+
+export function PromoBanner({ onBetClick }: PromoBannerProps) {
   return (
     <div className="relative overflow-hidden rounded-2xl p-5 mb-6" style={{
       background: 'linear-gradient(135deg, hsl(145 77% 46%) 0%, hsl(145 77% 35%) 100%)'
@@ -16,10 +21,18 @@ export function PromoBanner() {
         <p className="text-sm text-primary-foreground/80 mb-4">
           Participe do maior bolão da Copa e concorra a prêmios incríveis!
         </p>
-        <button className="flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent/80 transition-colors">
-          Ver regras
-          <ChevronRight className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={onBetClick}
+            className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold px-6"
+          >
+            Apostar Agora
+          </Button>
+          <button className="flex items-center gap-1 text-sm font-semibold text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+            Ver regras
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
       
       {/* Decorative elements */}
