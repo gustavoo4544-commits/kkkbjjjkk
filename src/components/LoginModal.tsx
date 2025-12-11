@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Phone, X, Loader2 } from 'lucide-react';
+import { User, Phone, X, Loader2, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface LoginModalProps {
@@ -14,8 +14,10 @@ interface LoginModalProps {
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
+  const [isNewUser, setIsNewUser] = useState(false);
+  const { login, register } = useAuth();
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -32,19 +34,35 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim() || !phone.trim()) return;
+    if (!phone.trim() || !password.trim()) return;
+    if (isNewUser && !name.trim()) return;
     
     setIsSubmitting(true);
     try {
-      const success = await login(name.trim(), phone.trim());
+      let success: boolean;
+      if (isNewUser) {
+        success = await register(name.trim(), phone.trim(), password);
+      } else {
+        success = await login(phone.trim(), password);
+      }
+      
       if (success) {
         onClose();
         setName('');
         setPhone('');
+        setPassword('');
+        setIsNewUser(false);
       }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsNewUser(!isNewUser);
+    setName('');
+    setPhone('');
+    setPassword('');
   };
 
   return (
@@ -58,33 +76,37 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </button>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center text-foreground">
-            Entrar ou Criar Conta
+            {isNewUser ? 'Criar Conta' : 'Entrar'}
           </DialogTitle>
         </DialogHeader>
         
         <p className="text-sm text-muted-foreground text-center">
-          Digite seu nome e telefone. Se já tiver conta, entraremos automaticamente.
+          {isNewUser 
+            ? 'Preencha os dados abaixo para criar sua conta.' 
+            : 'Digite seu telefone e senha para entrar.'}
         </p>
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-foreground font-medium">
-              Nome Completo
-            </Label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="name"
-                type="text"
-                placeholder="Digite seu nome"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
-                required
-                disabled={isSubmitting}
-              />
+          {isNewUser && (
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-foreground font-medium">
+                Nome Completo
+              </Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Digite seu nome"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="phone" className="text-foreground font-medium">
@@ -106,6 +128,26 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-foreground font-medium">
+              Senha
+            </Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="password"
+                type="password"
+                placeholder="Digite sua senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10 bg-input border-border text-foreground placeholder:text-muted-foreground"
+                required
+                minLength={4}
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+
           <Button
             type="submit"
             className="w-full btn-primary-glow text-primary-foreground font-bold py-3"
@@ -114,13 +156,26 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Entrando...
+                {isNewUser ? 'Criando...' : 'Entrando...'}
               </>
             ) : (
-              'Entrar'
+              isNewUser ? 'Criar Conta' : 'Entrar'
             )}
           </Button>
         </form>
+
+        <div className="text-center mt-4">
+          <button
+            type="button"
+            onClick={toggleMode}
+            className="text-sm text-primary hover:underline"
+            disabled={isSubmitting}
+          >
+            {isNewUser 
+              ? 'Já tem conta? Entrar' 
+              : 'Não tem conta? Criar conta'}
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );
