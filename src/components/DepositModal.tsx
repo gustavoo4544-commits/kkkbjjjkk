@@ -24,7 +24,7 @@ type DepositStep = 'select' | 'payment' | 'success';
 type PaymentStatus = 'pending' | 'waiting' | 'completed' | 'error';
 
 export function DepositModal({ isOpen, onClose }: DepositModalProps) {
-  const { user, addCredits, updateBalance, addDeposit } = useAuth();
+  const { user, addDeposit } = useAuth();
   const [selectedAmount, setSelectedAmount] = useState(20);
   const [step, setStep] = useState<DepositStep>('select');
   const [pixCode, setPixCode] = useState('');
@@ -133,10 +133,8 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
             pollingRef.current = null;
           }
 
-          // Update user balance
-          updateBalance(selectedAmount);
-          addCredits(selectedOption.points);
-          addDeposit(selectedAmount, selectedOption.points);
+          // Register deposit (this updates credits in DB and local state)
+          await addDeposit(selectedAmount, selectedOption.points);
 
           toast({
             title: "Pagamento confirmado! 🎉",

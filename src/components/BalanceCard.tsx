@@ -1,4 +1,4 @@
-import { Wallet, ArrowUpRight } from 'lucide-react';
+import { Wallet, Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -20,10 +20,10 @@ export function BalanceCard({ onDepositClick }: BalanceCardProps) {
           <Button
             onClick={onDepositClick}
             size="sm"
-            className="btn-cartoon bg-accent text-accent-foreground font-bold text-xs px-3 h-7"
+            className="btn-cartoon bg-primary text-primary-foreground font-bold text-xs px-3 h-7"
           >
-            <ArrowUpRight className="w-3 h-3 mr-1" />
-            Sacar
+            <Plus className="w-3 h-3 mr-1" />
+            Depositar
           </Button>
         )}
       </div>
