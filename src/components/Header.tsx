@@ -20,7 +20,7 @@ export function Header() {
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center glow-green">
               <Trophy className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg text-foreground">BolaCup</span>
+            <span className="font-bold text-lg text-foreground">CopaCravada</span>
           </div>
 
           {/* Right Side */}
