@@ -6,6 +6,7 @@ import { PromoBanner } from '@/components/PromoBanner';
 import { BottomNav } from '@/components/BottomNav';
 import { BetModal } from '@/components/BetModal';
 import { LoginModal } from '@/components/LoginModal';
+import { DepositModal } from '@/components/DepositModal';
 import { HistoryList } from '@/components/HistoryList';
 import { TransactionReceipt, Transaction } from '@/components/TransactionReceipt';
 import { PrizeModal } from '@/components/PrizeModal';
@@ -20,6 +21,7 @@ export default function Index() {
   const [showBetModal, setShowBetModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPrizeModal, setShowPrizeModal] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const { user, isAuthenticated, transactions, totalPrize, totalBettors, betsByTeam } = useAuth();
@@ -36,7 +38,9 @@ export default function Index() {
   const handleDepositClick = () => {
     if (!isAuthenticated) {
       setShowLoginModal(true);
+      return;
     }
+    setShowDepositModal(true);
   };
 
   const handleBetNowClick = () => {
@@ -211,6 +215,11 @@ export default function Index() {
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
+      />
+
+      <DepositModal
+        isOpen={showDepositModal}
+        onClose={() => setShowDepositModal(false)}
       />
 
       <PrizeModal
