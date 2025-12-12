@@ -59,7 +59,27 @@ async function getAuthToken(): Promise<string> {
 async function createPixPayment(amount: number, userId: string, userName: string, userPhone: string): Promise<{ pix_code: string; identifier: string }> {
   const token = await getAuthToken();
 
-  console.log('Creating PIX payment for amount:', amount);
+  console.log('Creating PIX payment for amount:', amount, 'userId:', userId);
+
+  // Ensure amount is a valid number
+  const numericAmount = Number(amount);
+  if (isNaN(numericAmount) || numericAmount <= 0) {
+    throw new Error(`Invalid amount: ${amount}`);
+  }
+
+  const requestBody = {
+    amount: numericAmount,
+    description: `Depósito CopaCravada - ${userName}`,
+    webhook_url: 'https://ahxcjdpgnodesgxqksss.supabase.co/functions/v1/pix-webhook',
+    client: {
+      name: userName || 'Usuario',
+      cpf: '00000000000',
+      email: `${userPhone.replace(/\D/g, '')}@copacravada.app`,
+      phone: userPhone.replace(/\D/g, ''),
+    },
+  };
+
+  console.log('Request body:', JSON.stringify(requestBody));
 
   const response = await fetch(`${SYNCPAYMENTS_BASE_URL}/api/partner/v1/cash-in`, {
     method: 'POST',
@@ -68,26 +88,30 @@ async function createPixPayment(amount: number, userId: string, userName: string
       'Accept': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({
-      amount: amount,
-      description: `Depósito BolaCup - ${userName}`,
-      webhook_url: 'https://ahxcjdpgnodesgxqksss.supabase.co/functions/v1/pix-webhook',
-      client: {
-        name: userName,
-        cpf: '00000000000', // Placeholder - ideally collect from user
-        email: `${userPhone}@bolacup.app`,
-        phone: userPhone.replace(/\D/g, ''),
-      },
-    }),
+    body: JSON.stringify(requestBody),
   });
 
+  const responseText = await response.text();
+  console.log('Response status:', response.status, 'Response:', responseText);
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Create payment error:', errorText);
-    throw new Error(`Failed to create payment: ${response.status}`);
+    console.error('Create payment error:', responseText);
+    throw new Error(`Failed to create payment: ${response.status} - ${responseText}`);
   }
 
-  const data = await response.json();
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch (e) {
+    console.error('Failed to parse response:', responseText);
+    throw new Error('Invalid response from payment API');
+  }
+
+  if (!data.pix_code || !data.identifier) {
+    console.error('Missing pix_code or identifier in response:', data);
+    throw new Error('Invalid payment response - missing required fields');
+  }
+
   console.log('Payment created successfully, identifier:', data.identifier);
 
   return {
