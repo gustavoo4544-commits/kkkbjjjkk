@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, Wallet, Check, Copy, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -187,6 +187,11 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
             {step === 'payment' && 'Pagamento PIX'}
             {step === 'success' && 'Sucesso!'}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {step === 'select' && 'Selecione o valor do depósito'}
+            {step === 'payment' && 'Escaneie o QR Code ou copie o código PIX'}
+            {step === 'success' && 'Seu pagamento foi confirmado'}
+          </DialogDescription>
         </DialogHeader>
         
         {/* Step 1: Select Amount */}
