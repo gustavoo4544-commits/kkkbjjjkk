@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -78,13 +78,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           <DialogTitle className="text-xl font-bold text-center text-foreground">
             {isNewUser ? 'Criar Conta' : 'Entrar'}
           </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground text-center">
+            {isNewUser 
+              ? 'Preencha os dados abaixo para criar sua conta.' 
+              : 'Digite seu telefone e senha para entrar.'}
+          </DialogDescription>
         </DialogHeader>
-        
-        <p className="text-sm text-muted-foreground text-center">
-          {isNewUser 
-            ? 'Preencha os dados abaixo para criar sua conta.' 
-            : 'Digite seu telefone e senha para entrar.'}
-        </p>
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {isNewUser && (

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Team } from '@/types/user';
 import { Users, Trophy, Coins, X } from 'lucide-react';
@@ -17,7 +17,7 @@ export function BetModal({ team, isOpen, onClose }: BetModalProps) {
   const { user, addBet } = useAuth();
   const amounts = [1, 2, 3, 5];
 
-  const handleBet = () => {
+  const handleBet = async () => {
     if (!user || !team) return;
     
     if (user.credits < amount) {
@@ -29,12 +29,14 @@ export function BetModal({ team, isOpen, onClose }: BetModalProps) {
       return;
     }
 
-    addBet(team.id, team.name, team.flag, amount);
-    toast({
-      title: "Aposta realizada!",
-      description: `Você apostou ${amount} ponto${amount > 1 ? 's' : ''} no ${team.name}.`,
-    });
-    onClose();
+    const success = await addBet(team.id, team.name, team.flag, amount);
+    if (success) {
+      toast({
+        title: "Aposta realizada!",
+        description: `Você apostou ${amount} ponto${amount > 1 ? 's' : ''} no ${team.name}.`,
+      });
+      onClose();
+    }
   };
 
   if (!team) return null;
@@ -55,6 +57,9 @@ export function BetModal({ team, isOpen, onClose }: BetModalProps) {
           <DialogTitle className="text-xl font-bold text-center text-foreground">
             {team.name}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Apostar no time {team.name}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
