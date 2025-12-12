@@ -10,11 +10,13 @@ interface PrizeModalProps {
   betsByTeam: { teamName: string; teamFlag: string; bettors: number; amount: number }[];
 }
 
-// Cada ponto = R$20, então o prêmio em R$ é totalPrize * 20
-const formatCurrency = (points: number) => {
-  const value = points * 20;
+// O prêmio já vem em R$ da API, não precisa multiplicar
+const formatCurrency = (value: number) => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
+
+// Converte R$ para pontos (R$20 = 1 ponto)
+const toPoints = (value: number) => Math.floor(value / 20);
 
 export function PrizeModal({ isOpen, onClose, totalPrize, totalBettors, betsByTeam }: PrizeModalProps) {
   return (
@@ -48,7 +50,7 @@ export function PrizeModal({ isOpen, onClose, totalPrize, totalBettors, betsByTe
             </p>
             <div className="flex items-center justify-center gap-1 mt-1">
               <TrendingUp className="w-3 h-3 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">{totalPrize} créditos acumulados</p>
+              <p className="text-xs text-muted-foreground">{toPoints(totalPrize)} créditos acumulados</p>
             </div>
           </div>
 

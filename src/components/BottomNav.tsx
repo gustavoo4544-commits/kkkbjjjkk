@@ -69,7 +69,7 @@ export function BottomNav({
           <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-cartoon border-4 border-background transition-transform hover:scale-105 active:scale-95">
             <Gift className="w-6 h-6 text-accent-foreground" />
           </div>
-          <span className="text-xs font-bold text-accent mt-1">{totalPrize} pts</span>
+          <span className="text-xs font-bold text-accent mt-1">{Math.floor(totalPrize / 20)} pts</span>
         </button>
 
         {/* Right tabs */}
