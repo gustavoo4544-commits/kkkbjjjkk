@@ -1,1 +1,4 @@
 project_id = "ahxcjdpgnodesgxqksss"
+
+[functions.pix-payment]
+verify_jwt = false
